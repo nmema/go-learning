@@ -144,5 +144,5 @@ func ListTasks(l *todo.List, flag_not bool, flag_date bool) {
 		}
 	}
 
-	fmt.Println(formatted)
+	fmt.Printf(formatted)
 }

@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	binName  = "todo"
-	fileName = ".todo.json"
+	binName      = "todo"
+	todoFileName = ".todo.json"
 )
 
 func TestMain(m *testing.M) {
@@ -20,6 +20,11 @@ func TestMain(m *testing.M) {
 
 	if runtime.GOOS == "windows" {
 		binName += ".exe"
+	}
+
+	// Check if the user defined the ENV VAR for a custom file
+	if os.Getenv("TODO_FILENAME") != "" {
+		todoFileName = os.Getenv("TODO_FILENAME")
 	}
 
 	build := exec.Command("go", "build", "-o", binName)
@@ -34,7 +39,7 @@ func TestMain(m *testing.M) {
 
 	fmt.Println("Cleaning up...")
 	os.Remove(binName)
-	os.Remove(fileName)
+	os.Remove(todoFileName)
 
 	os.Exit(result)
 }
