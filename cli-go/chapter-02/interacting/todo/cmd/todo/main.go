@@ -32,6 +32,8 @@ func main() {
 	list := flag.Bool("list", false, "List all tasks")
 	complete := flag.Int("complete", 0, "Item to be completed")
 	del := flag.Int("del", 0, "Delete item from the ToDo list")
+	not_completed := flag.Bool("not", false, "Show only items to complete")
+	show_date := flag.Bool("date", false, "Show created date of the item")
 
 	flag.Parse()
 
@@ -48,7 +50,9 @@ func main() {
 	switch {
 	case *list:
 		// List current ToDo items
-		fmt.Print(l)
+		// fmt.Print(l)
+		ListTasks(l, *not_completed, *show_date)
+
 	case *complete > 0:
 		// Complete the given item
 		if err := l.Complete(*complete); err != nil {
@@ -65,14 +69,16 @@ func main() {
 	case *add:
 		// When any arguments (excluding flags are provided, they will be
 		// used as the new task
-		t, err := getTask(os.Stdin, flag.Args()...)
+		ts, err := getTask(os.Stdin, flag.Args()...)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 
-		// Add the task
-		l.Add(t)
+		for _, task := range ts {
+			// Add the task
+			l.Add(task)
+		}
 
 		// Save the new list
 		if err := l.Save(todoFileName); err != nil {
@@ -102,21 +108,49 @@ func main() {
 
 // getTask function decides where to get the description for a new
 // task from: arguments or STDIN
-func getTask(r io.Reader, args ...string) (string, error) {
+func getTask(r io.Reader, args ...string) ([]string, error) {
 	if len(args) > 0 {
-		return strings.Join(args, " "), nil
+		return []string{strings.Join(args, " ")}, nil
 	}
 
+	var tasks []string
 	s := bufio.NewScanner(r)
-	s.Scan()
-	if err := s.Err(); err != nil {
-		return "", err
+
+	for {
+		s.Scan()
+		task := s.Text()
+		if err := s.Err(); err != nil {
+			return []string{""}, err
+		}
+
+		if len(task) == 0 {
+			break
+		}
+
+		tasks = append(tasks, task)
 	}
 
-	if len(s.Text()) == 0 {
-		return "", fmt.Errorf("Task cannot be blank")
+	return tasks, nil
+}
+
+func ListTasks(l *todo.List, flag_not bool, flag_date bool) {
+	formatted := ""
+
+	for k, t := range *l {
+		prefix := "  "
+		if t.Done {
+			prefix = "X "
+		}
+
+		if (flag_not == true) && t.Done == true {
+			continue
+		} else if flag_date {
+			// Adjust the item number k to print numbers starting from 1 instead of 0
+			formatted += fmt.Sprintf("%s%d - %s : %s\n", prefix, k+1, t.CreatedAt.Format("2006-01-02 15:04:05"), t.Task)
+		} else {
+			formatted += fmt.Sprintf("%s%d: %s\n", prefix, k+1, t.Task)
+		}
 	}
 
-	return s.Text(), nil
-
+	fmt.Printf(formatted)
 }
