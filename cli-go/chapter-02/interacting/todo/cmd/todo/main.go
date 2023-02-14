@@ -32,6 +32,8 @@ func main() {
 	list := flag.Bool("list", false, "List all tasks")
 	complete := flag.Int("complete", 0, "Item to be completed")
 	del := flag.Int("del", 0, "Delete item from the ToDo list")
+	not_completed := flag.Bool("not", false, "Show only items to complete")
+	show_date := flag.Bool("date", false, "Show created date of the item")
 
 	flag.Parse()
 
@@ -48,7 +50,9 @@ func main() {
 	switch {
 	case *list:
 		// List current ToDo items
-		fmt.Print(l)
+		// fmt.Print(l)
+		ListTasks(l, *not_completed, *show_date)
+
 	case *complete > 0:
 		// Complete the given item
 		if err := l.Complete(*complete); err != nil {
@@ -119,4 +123,26 @@ func getTask(r io.Reader, args ...string) (string, error) {
 
 	return s.Text(), nil
 
+}
+
+func ListTasks(l *todo.List, flag_not bool, flag_date bool) {
+	formatted := ""
+
+	for k, t := range *l {
+		prefix := "  "
+		if t.Done {
+			prefix = "X "
+		}
+
+		if (flag_not == true) && t.Done == true {
+			continue
+		} else if flag_date {
+			// Adjust the item number k to print numbers starting from 1 instead of 0
+			formatted += fmt.Sprintf("%s%d - %s : %s\n", prefix, k+1, t.CreatedAt.Format("2006-01-02 15:04:05"), t.Task)
+		} else {
+			formatted += fmt.Sprintf("%s%d: %s\n", prefix, k+1, t.Task)
+		}
+	}
+
+	fmt.Println(formatted)
 }
