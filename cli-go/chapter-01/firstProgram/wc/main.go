@@ -50,16 +50,19 @@ func main() {
 	var input *os.File
 	var err error
 	if *file != "" {
-		input, err = os.Open(*file)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+		for _, fileName := range append(flag.Args(), *file) {
+			input, err = os.Open(fileName)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			fmt.Println(fileName)
+			fmt.Println(count(input, *lines, *bytes))
 		}
 	} else {
 		input = os.Stdin
+		fmt.Println(count(input, *lines, *bytes))
 	}
-
 	// Calling the count function to count the number of words (or lines)
 	// received from the Standard Input and printing it out
-	fmt.Println(count(input, *lines, *bytes))
 }
