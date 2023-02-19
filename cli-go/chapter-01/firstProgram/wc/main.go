@@ -41,10 +41,25 @@ func main() {
 	// Defining a boolean flag -b to count bytes
 	bytes := flag.Bool("b", false, "Count bytes")
 
+	// Defining a boolean flag -file to read data from file
+	file := flag.String("file", "", "Read data from file")
+
 	// Parsing the flags provided by the user
 	flag.Parse()
 
+	var input *os.File
+	var err error
+	if *file != "" {
+		input, err = os.Open(*file)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	} else {
+		input = os.Stdin
+	}
+
 	// Calling the count function to count the number of words (or lines)
 	// received from the Standard Input and printing it out
-	fmt.Println(count(os.Stdin, *lines, *bytes))
+	fmt.Println(count(input, *lines, *bytes))
 }
