@@ -19,7 +19,7 @@ func TestParseContent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	result, err := parseContent(input, "")
+	result, err := parseContent(input, "", "./testdata/test1.md.html")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,6 +36,7 @@ func TestParseContent(t *testing.T) {
 	}
 }
 
+// TODO: update file previewed result vs. golden
 func TestRun(t *testing.T) {
 	var mockStdOut bytes.Buffer
 

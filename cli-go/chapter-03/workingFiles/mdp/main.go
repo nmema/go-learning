@@ -24,6 +24,7 @@ const (
         <title>{{ .Title }}</title>
     </head>
     <body>
+{{ .FileName }}
 {{ .Body }}
     </body>
 </html>
@@ -32,8 +33,9 @@ const (
 
 // content type represents the HTML content to add into the template
 type content struct {
-	Title string
-	Body  template.HTML
+	Title    string
+	Body     template.HTML
+	FileName string
 }
 
 func main() {
@@ -62,11 +64,6 @@ func run(filename string, tFname string, out io.Writer, skipPreview bool) error 
 		return err
 	}
 
-	htmlData, err := parseContent(input, tFname)
-	if err != nil {
-		return err
-	}
-
 	// Create temporary file and check for errors
 	temp, err := ioutil.TempFile("", "mdp*.html")
 	if err != nil {
@@ -79,6 +76,11 @@ func run(filename string, tFname string, out io.Writer, skipPreview bool) error 
 	outName := temp.Name()
 
 	fmt.Fprintln(out, outName)
+
+	htmlData, err := parseContent(input, tFname, outName)
+	if err != nil {
+		return err
+	}
 
 	if err := saveHTML(outName, htmlData); err != nil {
 		return err
@@ -93,7 +95,7 @@ func run(filename string, tFname string, out io.Writer, skipPreview bool) error 
 	return preview(outName)
 }
 
-func parseContent(input []byte, tFname string) ([]byte, error) {
+func parseContent(input []byte, tFname string, fileName string) ([]byte, error) {
 	// Parse the markdown file through blackfriday and bluemonday
 	// to generate a valid and safe HTML
 	output := blackfriday.Run(input)
@@ -115,8 +117,9 @@ func parseContent(input []byte, tFname string) ([]byte, error) {
 
 	// Instantiate the content type, adding the title and body
 	c := content{
-		Title: "Markdown Preview Tool",
-		Body:  template.HTML(body),
+		Title:    "Markdown Preview Tool",
+		Body:     template.HTML(body),
+		FileName: fileName,
 	}
 
 	// Create a buffer of bytes to write to file
