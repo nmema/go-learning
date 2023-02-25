@@ -1,0 +1,7 @@
+goos: linux
+goarch: amd64
+pkg: cli-go/chapter-05/colStats
+cpu: AMD Ryzen 5 2500U with Radeon Vega Mobile Gfx  
+BenchmarkRun-8   	      10	 934327663 ns/op
+PASS
+ok  	cli-go/chapter-05/colStats	10.256s
