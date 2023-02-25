@@ -43,22 +43,21 @@ func csv2float(r io.Reader, column int) ([]float64, error) {
 		if i == 0 {
 			continue
 		}
+
+		// Checking number of columns in CSV file
+		if len(row) <= column {
+			// File does not have that many columns
+			return nil, fmt.Errorf("%w: File has only %d columns", ErrInvalidColumn, len(row))
+		}
+
+		// Try to convert data read into a float number
+		v, err := strconv.ParseFloat(row[column], 64)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", ErrNotNumber, err)
+		}
+
+		data = append(data, v)
 	}
-
-	// Checking number of columns in CSV file
-	if len(row) <= column {
-		// File does not have that many columns
-		return nil, fmt.Errorf("%w: File has only %d columns", ErrInvalidColumn, len(row))
-	}
-
-	// Try to convert data read into a float number
-	v, err := strconv.ParseFloat(row[column], 64)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrNotNumber, err)
-	}
-
-	data = append(data, v)
-
 	// Return the slice of float64 and nil error
 	return data, nil
 }
