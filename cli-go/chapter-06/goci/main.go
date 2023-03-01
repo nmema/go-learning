@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 )
+
+type executer interface {
+	execute() (string, error)
+}
 
 func main() {
 	proj := flag.String("p", "", "Project directory")
@@ -23,20 +26,48 @@ func run(proj string, out io.Writer) error {
 		return fmt.Errorf("Project directory is required: %w", ErrValidation)
 	}
 
-	//To execute go build without creating an executable file,
+	pipeline := make([]executer, 3)
+
+	pipeline[0] = newStep(
+		"go build",
+		"go",
+		"Go Build: SUCCESS",
+		proj,
+		[]string{"build", ".", "errors"},
+	)
+
+	// To execute go build without creating an executable file,
 	// go build doesn’t create a file when building multiple
 	// packages at the same time. We add and extra package,
 	// in this case, errors.
-	args := []string{"build", ".", "errors"}
 
-	cmd := exec.Command("go", args...)
-	cmd.Dir = proj
+	pipeline[1] = newStep(
+		"go test",
+		"go",
+		"Go Test: SUCCESS",
+		proj,
+		[]string{"test", "-v"},
+	)
 
-	if err := cmd.Run(); err != nil {
-		return &stepErr{step: "go build", msg: "go build failed", cause: err}
+	pipeline[2] = newExceptionStep(
+		"go fmt",
+		"gofmt",
+		"Gofmt: SUCCESS",
+		proj,
+		[]string{"-l", "."},
+	)
+
+	for _, s := range pipeline {
+		msg, err := s.execute()
+		if err != nil {
+			return err
+		}
+
+		_, err = fmt.Fprintln(out, msg)
+		if err != nil {
+			return err
+		}
 	}
 
-	_, err := fmt.Fprintln(out, "Go Build: SUCCESS")
-
-	return err
+	return nil
 }
