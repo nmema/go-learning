@@ -26,7 +26,7 @@ func main() {
 		List: []string{"banana", "orange", "apple", "grapes"},
 	}
 
-	data, err := json.Marshal(fruits)
+	data, err := json.Marshal(&fruits)
 	if err != nil {
 		fmt.Println(err)
 	}
