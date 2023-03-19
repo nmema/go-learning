@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -91,4 +93,71 @@ func getOne(apiRoot string, id int) (item, error) {
 	}
 
 	return items[0], nil
+}
+
+func sendRequest(url, method, contentType string,
+	expStatus int, body io.Reader) error {
+
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return err
+	}
+
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+
+	r, err := newClient().Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer r.Body.Close()
+
+	if r.StatusCode != expStatus {
+		msg, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			return fmt.Errorf("Cannot read body: %w", err)
+		}
+
+		err = ErrInvalidResponse
+		if r.StatusCode == http.StatusNotFound {
+			err = ErrNotFound
+		}
+		return fmt.Errorf("%w: %s", err, msg)
+	}
+
+	return nil
+}
+
+func addItem(apiRoot, task string) error {
+	// Define the Add endpoint URL
+	u := fmt.Sprintf("%s/todo", apiRoot)
+
+	item := struct {
+		Task string `json:"task"`
+	}{
+		Task: task,
+	}
+
+	var body bytes.Buffer
+
+	if err := json.NewEncoder(&body).Encode(item); err != nil {
+		return err
+	}
+
+	return sendRequest(u, http.MethodPost, "application/json",
+		http.StatusCreated, &body)
+}
+
+func completeItem(apiRoot string, id int) error {
+	u := fmt.Sprintf("%s/todo/%d?complete", apiRoot, id)
+
+	return sendRequest(u, http.MethodPatch, "", http.StatusNoContent, nil)
+}
+
+func deleteItem(apiRoot string, id int) error {
+	u := fmt.Sprintf("%s/todo/%d", apiRoot, id)
+
+	return sendRequest(u, http.MethodDelete, "", http.StatusNoContent, nil)
 }
